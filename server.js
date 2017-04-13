@@ -17,7 +17,13 @@ const server = net.createServer((c) => {
   '|                                        |_|                       |\n'               +
   '|__________________________________________________________________|\n');
   c.write('Hosted at whatever arbitrary location the admin chooses.\n\n');
-  c.write('Chat:\n');
+  c.write('Chat:\n\n');
+  process.stdout.write(`Another user has connected.\n`);
+  for (let i = 0; i < connections.length; ++i) {
+    if (connections[i] !== c) {
+      connections[i].write(`Another user has connected.\n`);
+    }
+  }
 
   // events
   c.on('data', (data) => {
@@ -44,6 +50,11 @@ const server = net.createServer((c) => {
   c.on('end', (data) => {
     const disconnectedIndex = connections.indexOf(c);
     connections.splice(disconnectedIndex, 1);
+
+    process.stdout.write(`A user has disconnected.\n`);
+    for (let i = 0; i < connections.length; ++i) {
+      connections[i].write(`A user has disconnected.\n`);
+    }
   });
 
 });
