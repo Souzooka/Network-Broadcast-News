@@ -67,18 +67,6 @@ const server = net.createServer((c) => {
     connections.splice(getUserIndex(), 1);
   }
 
-  function printText() {
-    var chunk = process.stdin.read();
-    if (chunk !== null) {
-      for (let i = 0; i < connections.length; ++i) {
-        connections[i].write(`[ADMIN]: ${chunk}`);
-      }
-      readline.moveCursor(process.stdout, 0, -1);
-      readline.clearScreenDown(process.stdout);
-      process.stdout.write(`[ADMIN]: ${chunk.toString()}`);
-    }
-  }
-
   function printData(data) {
     process.stdout.write(`${connections[getUserIndex()].username}: ${data.toString()}`);
     for (let i = 0; i < connections.length; ++i) {
@@ -103,8 +91,7 @@ const server = net.createServer((c) => {
         }
       }
     if (unique) {
-      let nameChangeMsg = `${colors.OKBLUE}${connections[getUserIndex()].username}
-                            has changed name to ${commandArgs[1]}${colors.ENDC}`;
+      let nameChangeMsg = `${colors.OKBLUE}${connections[getUserIndex()].username} has changed name to ${commandArgs[1]}${colors.ENDC}\n`;
       process.stdout.write(nameChangeMsg);
       for (let i = 0; i < connections.length; ++i) {
         if (connections[i] !== c) {
@@ -120,7 +107,6 @@ const server = net.createServer((c) => {
 
   function processCommand(chunk) {
     let commandArgs = chunk.toString().split(' ');
-    console.log(commandArgs[0])
     switch (commandArgs[0]) {
       case '/name':
         changeUserName(commandArgs);
@@ -130,6 +116,8 @@ const server = net.createServer((c) => {
     }
   }
 
+
+  console.log('test')
   addConnection();
   greetUser();
 
@@ -142,12 +130,10 @@ const server = net.createServer((c) => {
     }
   });
 
-  process.stdin.on('readable', () => {
-    printText();
-  });
-
   c.on('end', () => {
-    disconnectUser();
+    if (connections.indexOf(c) !== -1) {
+      disconnectUser();
+    }
   });
 
 });
@@ -155,4 +141,65 @@ const server = net.createServer((c) => {
 // listen on port 3113
 server.listen(3113, () => {
   console.log('Server successfully started.');
+});
+
+function kickUser(username) {
+  if (!username) {
+    console.log(`${colors.WARNING}Usage: /kick <username>${colors.ENDC}`);
+  } else {
+    var found = false;
+    for (let i = 0; i < connections.length; ++i) {
+      if (connections[i].username === username) {
+        found = true;
+        let kickMsg = `${colors.FAIL}${username} was kicked from the server.${colors.ENDC}\n`;
+        process.stdout.write(kickMsg);
+        for (let j = 0; j < connections.length; ++j) {
+          connections[j].write(kickMsg);
+        }
+        connections[i].end();
+        connections.splice(i, 1);
+        break;
+      }
+    }
+    if (!found) {
+      process.stdout.write(`${colors.WARNING}${username} was not found.${colors.ENDC}\n`);
+    }
+  }
+}
+
+function processAdminCommand(chunk) {
+  let commandArgs = chunk.toString().split(' ');
+  clearLine();
+  switch (commandArgs[0]) {
+    case '/kick':
+      kickUser(commandArgs[1]);
+      break;
+    default:
+      console.log(`${colors.FAIL}${commandArgs[0]} is not a valid server-side command.${colors.ENDC}`);
+  }
+}
+
+function printText(chunk) {
+  if (chunk !== null) {
+    for (let i = 0; i < connections.length; ++i) {
+      connections[i].write(`[ADMIN]: ${chunk}`);
+    }
+    clearLine();
+    process.stdout.write(`[ADMIN]: ${chunk.toString()}`);
+  }
+}
+
+function clearLine() {
+  readline.moveCursor(process.stdout, 0, -1);
+  readline.clearScreenDown(process.stdout);
+}
+
+process.stdin.on('readable', () => {
+  var chunk = process.stdin.read().toString();
+  if (chunk.indexOf('/') === 0) {
+    chunk = chunk.slice(0, chunk.length-1);
+    processAdminCommand(chunk);
+  } else {
+    printText(chunk);
+  }
 });
