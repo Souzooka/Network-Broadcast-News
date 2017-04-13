@@ -1,13 +1,13 @@
 const net = require('net');
 const process = require('process');
-const client = net.connect({port: 3113}, '167.216.21.232', () => {
+const client = net.connect({port: 3113, host : '10.0.1.19'}, () => {
   // initial code
   console.log('Successfully connected to server.\n');
 });
 
 // events
 client.on('data', (data) => {
-  console.log(data.toString());
+  process.stdout.write(data.toString());
 });
 
 client.on('end', () => {

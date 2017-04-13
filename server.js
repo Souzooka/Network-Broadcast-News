@@ -1,7 +1,9 @@
 const net = require('net');
 const users = [];
+const connections = [];
 const server = net.createServer((c) => {
   // initial code
+  connections.push(c);
   c.write('You find yourself connected to...\n');
   c.write('.__________________________________________________________________.\n'       +
   '|    _   _            _             ____                           |\n'               +
@@ -12,11 +14,21 @@ const server = net.createServer((c) => {
   '|                                        |_|                       |\n'               +
   '|__________________________________________________________________|\n');
   c.write('Hosted at whatever arbitrary location the admin chooses.\n\n');
-  c.write('Chat:');
+  c.write('Chat:\n');
 
   // events
   c.on('data', (data) => {
-    c.write(`User: ${data.toString()}`);
+    console.log(`User: ${data.toString()}`);
+    for (let i = 0; i < connections.length; ++i) {
+      if (connections[i] !== c) {
+        connections[i].write(`User: ${data.toString()}`);
+      }
+    }
+  });
+
+  c.on('end', (data) => {
+    const disconnectedIndex = connections.indexOf(c);
+    connections.splice(disconnectedIndex, 1);
   });
 
 });
