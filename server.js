@@ -7,7 +7,7 @@ const connections = [];
 
 const greeting =
     'You find yourself connected to...\n'                                                  +
-    '.__________________________________________________________________.\n'               +
+    '\033[95m.__________________________________________________________________.\n'               +
     '|    _   _            _             ____                           |\n'               +
     '|   | | | | __ _  ___| | _____ _ __/ ___| _ __   __ _  ___ ___     |\n'               +
     '|   | |_| |/ _` |/ __| |/ / _ \\\ \'__\\\___ \\\| \'_ \\\ / _` |/ __/ _ \\\    |\n'   +
@@ -15,17 +15,21 @@ const greeting =
     '|   |_| |_|\\\__,_|\\\___|_|\\\_\\\___|_|  |____/| .__/ \\\__,_|\\\___\\\___|    |\n' +
     '|                                        |_|                       |\n'               +
     '|__________________________________________________________________|\n'               +
-    '|__________________________________________________________________|\n'               +
-    'Hosted at whatever arbitrary location the admin chooses.\n\n'                         +
-    'Please enter a name:\n\n';
+    '|__________________________________________________________________|\033[0m\n'               +
+    'Hosted at whatever arbitrary location the admin chooses.\n\n';
 
 const server = net.createServer((c) => {
-  // initial code
+
+  function getUserIndex() { return connections.indexOf(c); }
+
+  function generateName() { return `anon${(Math.floor(Math.random() * 1e+10))}`; }
+
   function greetUser() {
-    let tempName = `user${(Math.floor(Math.random() * 100000))}`;
-
-
+    let tempName = generateName();
     c.write(greeting);
+    c.write('\033[93mYour current name is: ' + tempName + '\033[0m\n');
+    c.write('Use "/name <name>" to rename yourself.\n\n');
+    connections[getUserIndex()].username = tempName;
 
     process.stdout.write(`${tempName} has connected.\n`);
     for (let i = 0; i < connections.length; ++i) {
@@ -42,21 +46,11 @@ const server = net.createServer((c) => {
   addConnection();
   greetUser();
 
-  // c.write('Chat:\n\n');
-  process.stdout.write(`Another user has connected.\n`);
-  for (let i = 0; i < connections.length; ++i) {
-    if (connections[i] !== c) {
-      connections[i].write(`Another user has connected.\n`);
-    }
-  }
-
   // events
   c.on('data', (data) => {
-    process.stdout.write(`User: ${data.toString()}`);
+    process.stdout.write(`${connections[getUserIndex()].username}: ${data.toString()}`);
     for (let i = 0; i < connections.length; ++i) {
-      if (connections[i] !== c) {
-        connections[i].write(`User: ${data}`);
-      }
+      connections[i].write(`${connections[getUserIndex()].username}: ${data}`);
     }
   });
 
@@ -73,19 +67,19 @@ const server = net.createServer((c) => {
   });
 
   c.on('end', (data) => {
-    const disconnectedIndex = connections.indexOf(c);
-    connections.splice(disconnectedIndex, 1);
-
-    process.stdout.write(`A user has disconnected.\n`);
+    process.stdout.write(`${connections[getUserIndex()].username} has disconnected.\n`);
     for (let i = 0; i < connections.length; ++i) {
-      connections[i].write(`A user has disconnected.\n`);
+      if (connections[i] !== c) {
+        connections[i].write(`${connections[getUserIndex()].username} has disconnected.\n`);
+      }
     }
+
+    connections.splice(getUserIndex(), 1);
   });
 
 });
 
 // listen on port 3113
-
 server.listen(3113, () => {
   console.log('Server successfully started.');
 });
