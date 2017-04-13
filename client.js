@@ -14,7 +14,7 @@ function clearLine() {
 }
 
 function printHelp() {
-  process.stdout.write(`${colors.BOLD}\\ --------------- HELP --------------- \\${colors.ENDC}\n`);
+  process.stdout.write(`\n${colors.BOLD}\\ --------------- HELP --------------- \\${colors.ENDC}\n`);
   for (let i in commands) {
     process.stdout.write(commands[i]);
   }
@@ -34,20 +34,22 @@ function printDisconnect() {
 }
 
 function parseInput() {
-  const chunk = process.stdin.read();
+  let chunk = process.stdin.read();
   if (chunk !== null) {
 
     // commands
     if (chunk.indexOf('/') === 0) {
-      switch (chunk.toString().slice(1)) {
-        case 'clear\n':
+      clearLine();
+      chunk = chunk.toString().slice(0, chunk.toString().length-1);
+      let commandArgs = chunk.toString().split(' ');
+      switch (commandArgs[0]) {
+        case '/clear':
           clearScreen();
           break;
-        case 'help\n':
-          clearLine();
+        case '/help':
           printHelp();
           break;
-        case 'exit\n':
+        case '/exit':
           client.end();
           break;
         default:
@@ -56,8 +58,8 @@ function parseInput() {
       }
     // if not a command, send our data to server
     } else {
-      client.write(chunk);
       clearLine();
+      client.write(chunk);
     }
   }
 }

@@ -38,7 +38,7 @@ const server = net.createServer((c) => {
   function greetUser() {
     let tempName = generateName();
     c.write(greeting);
-    c.write('\033[93mYour current name is: ' + tempName + '\033[0m\n');
+    c.write(`${colors.WARNING}Your current name is: ${tempName}${colors.ENDC}\n`);
     c.write('Use "/name <name>" to rename yourself.\n');
     c.write('Or type /help to get a list of all commands!\n\n');
     connections[getUserIndex()].username = tempName;
@@ -55,18 +55,17 @@ const server = net.createServer((c) => {
     connections.push(c);
   }
 
-  addConnection();
-  greetUser();
-
-  // events
-  c.on('data', (data) => {
-    process.stdout.write(`${connections[getUserIndex()].username}: ${data.toString()}`);
+  function disconnectUser() {
+    process.stdout.write(`${connections[getUserIndex()].username} has disconnected.\n`);
     for (let i = 0; i < connections.length; ++i) {
-      connections[i].write(`${connections[getUserIndex()].username}: ${data}`);
+      if (connections[i] !== c) {
+        connections[i].write(`${connections[getUserIndex()].username} has disconnected.\n`);
+      }
     }
-  });
+    connections.splice(getUserIndex(), 1);
+  }
 
-  process.stdin.on('readable', () => {
+  function printText() {
     var chunk = process.stdin.read();
     if (chunk !== null) {
       for (let i = 0; i < connections.length; ++i) {
@@ -76,17 +75,29 @@ const server = net.createServer((c) => {
       readline.clearScreenDown(process.stdout);
       process.stdout.write(`[ADMIN]: ${chunk.toString()}`);
     }
+  }
+
+  function printData(data) {
+    process.stdout.write(`${connections[getUserIndex()].username}: ${data.toString()}`);
+    for (let i = 0; i < connections.length; ++i) {
+      connections[i].write(`${connections[getUserIndex()].username}: ${data}`);
+    }
+  }
+
+  addConnection();
+  greetUser();
+
+  // events
+  c.on('data', (data) => {
+    printData(data);
   });
 
-  c.on('end', (data) => {
-    process.stdout.write(`${connections[getUserIndex()].username} has disconnected.\n`);
-    for (let i = 0; i < connections.length; ++i) {
-      if (connections[i] !== c) {
-        connections[i].write(`${connections[getUserIndex()].username} has disconnected.\n`);
-      }
-    }
+  process.stdin.on('readable', () => {
+    printText();
+  });
 
-    connections.splice(getUserIndex(), 1);
+  c.on('end', () => {
+    disconnectUser();
   });
 
 });
