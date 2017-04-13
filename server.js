@@ -86,40 +86,44 @@ const server = net.createServer((c) => {
     }
   }
 
+  function changeUserName(commandArgs) {
+    if (!commandArgs[1]) {
+      c.write(`${colors.WARNING}Usage: /name <name>${colors.ENDC}\n`);
+      return -1;
+    }
+    if ( !(2 <= commandArgs[1].length <= 32) ) {
+      c.write(`${colors.FAIL}Names must be between 2 and 32 characters in length.${colors.ENDC}\n`);
+      return -1;
+    }
+    var unique = true;
+      for (let i = 0; i < connections.length; ++i) {
+        if (connections[i].username === commandArgs[1] || commandArgs[1].search(/(admin)/gi) !== -1) {
+          unique = false;
+          break;
+        }
+      }
+    if (unique) {
+      let nameChangeMsg = `${colors.OKBLUE}${connections[getUserIndex()].username}
+                            has changed name to ${commandArgs[1]}${colors.ENDC}`;
+      process.stdout.write(nameChangeMsg);
+      for (let i = 0; i < connections.length; ++i) {
+        if (connections[i] !== c) {
+          connections[i].write(nameChangeMsg);
+        }
+      }
+      c.write(`${colors.OKBLUE}Name successfully changed to ${commandArgs[1]}${colors.ENDC}\n`);
+      connections[getUserIndex()].username = commandArgs[1];
+    } else {
+      c.write(`${colors.FAIL}Name is already taken.${colors.ENDC}\n`);
+    }
+  }
+
   function processCommand(chunk) {
     let commandArgs = chunk.toString().split(' ');
     console.log(commandArgs[0])
     switch (commandArgs[0]) {
       case '/name':
-        if (!commandArgs[1]) {
-          c.write(`${colors.WARNING}Usage: /name <name>${colors.ENDC}\n`);
-          break;
-        }
-        if ( !(2 <= commandArgs[1].length <= 32) ) {
-          c.write(`${colors.FAIL}Names must be between 2 and 32 characters in length.${colors.ENDC}\n`);
-          break;
-        }
-        var unique = true;
-          for (let i = 0; i < connections.length; ++i) {
-            if (connections[i].username === commandArgs[1]) {
-              unique = false;
-              break;
-            }
-          }
-        if (unique) {
-          let nameChangeMsg = `${colors.OKBLUE}${connections[getUserIndex()].username}
-                                has changed name to ${commandArgs[1]}${colors.ENDC}`;
-          process.stdout.write(nameChangeMsg);
-          for (let i = 0; i < connections.length; ++i) {
-            if (connections[i] !== c) {
-              connections[i].write(nameChangeMsg);
-            }
-          }
-          c.write(`${colors.OKBLUE}Name successfully changed to ${commandArgs[1]}${colors.ENDC}\n`);
-          connections[getUserIndex()].username = commandArgs[1];
-        } else {
-          c.write(`${colors.FAIL}Name is already taken.${colors.ENDC}\n`);
-        }
+        changeUserName(commandArgs);
         break;
       default:
         c.write(`${colors.FAIL}${commandArgs[0]} is not a valid command.${colors.ENDC}\n`);
