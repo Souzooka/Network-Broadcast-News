@@ -1,4 +1,6 @@
 const net = require('net');
+const readline = require('readline');
+
 const users = [];
 const connections = [];
 const server = net.createServer((c) => {
@@ -22,8 +24,20 @@ const server = net.createServer((c) => {
     process.stdout.write(`User: ${data.toString()}`);
     for (let i = 0; i < connections.length; ++i) {
       if (connections[i] !== c) {
-        connections[i].write(`User: ${data.toString()}`);
+        connections[i].write(`User: ${data}`);
       }
+    }
+  });
+
+  process.stdin.on('readable', () => {
+    var chunk = process.stdin.read();
+    if (chunk !== null) {
+      for (let i = 0; i < connections.length; ++i) {
+        connections[i].write(`[ADMIN]: ${chunk}`);
+      }
+      readline.moveCursor(process.stdout, 0, -1);
+      readline.clearScreenDown(process.stdout);
+      process.stdout.write(`[ADMIN]: ${chunk.toString()}`);
     }
   });
 
