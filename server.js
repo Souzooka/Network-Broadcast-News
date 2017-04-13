@@ -1,23 +1,48 @@
+/*jshint esversion: 6 */
 const net = require('net');
 const readline = require('readline');
 
 const users = [];
 const connections = [];
+
+const greeting =
+    'You find yourself connected to...\n'                                                  +
+    '.__________________________________________________________________.\n'               +
+    '|    _   _            _             ____                           |\n'               +
+    '|   | | | | __ _  ___| | _____ _ __/ ___| _ __   __ _  ___ ___     |\n'               +
+    '|   | |_| |/ _` |/ __| |/ / _ \\\ \'__\\\___ \\\| \'_ \\\ / _` |/ __/ _ \\\    |\n'   +
+    '|   |  _  | (_| | (__|   <  __/ |   ___) | |_) | (_| | (__| __/    |\n'               +
+    '|   |_| |_|\\\__,_|\\\___|_|\\\_\\\___|_|  |____/| .__/ \\\__,_|\\\___\\\___|    |\n' +
+    '|                                        |_|                       |\n'               +
+    '|__________________________________________________________________|\n'               +
+    '|__________________________________________________________________|\n'               +
+    'Hosted at whatever arbitrary location the admin chooses.\n\n'                         +
+    'Please enter a name:\n\n';
+
 const server = net.createServer((c) => {
   // initial code
-  connections.push(c);
-  c.write('You find yourself connected to...\n');
-  c.write(
-  '.__________________________________________________________________.\n'       +
-  '|    _   _            _             ____                           |\n'               +
-  '|   | | | | __ _  ___| | _____ _ __/ ___| _ __   __ _  ___ ___     |\n'               +
-  '|   | |_| |/ _` |/ __| |/ / _ \\\ \'__\\\___ \\\| \'_ \\\ / _` |/ __/ _ \\\    |\n'   +
-  '|   |  _  | (_| | (__|   <  __/ |   ___) | |_) | (_| | (__| __/    |\n'               +
-  '|   |_| |_|\\\__,_|\\\___|_|\\\_\\\___|_|  |____/| .__/ \\\__,_|\\\___\\\___|    |\n' +
-  '|                                        |_|                       |\n'               +
-  '|__________________________________________________________________|\n');
-  c.write('Hosted at whatever arbitrary location the admin chooses.\n\n');
-  c.write('Chat:\n\n');
+  function greetUser() {
+    let tempName = `user${(Math.floor(Math.random() * 100000))}`;
+
+
+    c.write(greeting);
+
+    process.stdout.write(`${tempName} has connected.\n`);
+    for (let i = 0; i < connections.length; ++i) {
+      if (connections[i] !== c) {
+        connections[i].write(`${tempName} has connected.\n`);
+      }
+    }
+  }
+
+  function addConnection() {
+    connections.push(c);
+  }
+
+  addConnection();
+  greetUser();
+
+  // c.write('Chat:\n\n');
   process.stdout.write(`Another user has connected.\n`);
   for (let i = 0; i < connections.length; ++i) {
     if (connections[i] !== c) {

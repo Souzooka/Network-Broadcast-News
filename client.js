@@ -1,12 +1,16 @@
+/*jshint esversion: 6 */
 const net = require('net');
 const process = require('process');
 const readline = require('readline');
 
+function clearScreen() {
+  readline.cursorTo(process.stdout, 0, 0);
+  readline.clearScreenDown(process.stdout);
+}
 
 const client = net.connect({port: 3113, host : '10.0.1.19'}, () => {
   // initial code
-  readline.cursorTo(process.stdout, 0, 0);
-  readline.clearScreenDown(process.stdout);
+  clearScreen();
   console.log('Successfully connected to server.\n');
 });
 
@@ -24,9 +28,13 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('readable', () => {
   var chunk = process.stdin.read();
   if (chunk !== null) {
-    client.write(chunk);
-    readline.moveCursor(process.stdout, 0, -1);
-    readline.clearScreenDown(process.stdout);
-    process.stdout.write(`Local user: ${chunk.toString()}`);
+    if (chunk === '/clear\n') {
+      clearScreen();
+    } else {
+      client.write(chunk);
+      readline.moveCursor(process.stdout, 0, -1);
+      readline.clearScreenDown(process.stdout);
+      process.stdout.write(`Local user: ${chunk.toString()}`);
+    }
   }
 });
