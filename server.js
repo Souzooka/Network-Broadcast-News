@@ -5,7 +5,8 @@ const server = net.createServer((c) => {
   // initial code
   connections.push(c);
   c.write('You find yourself connected to...\n');
-  c.write('.__________________________________________________________________.\n'       +
+  c.write(
+  '.__________________________________________________________________.\n'       +
   '|    _   _            _             ____                           |\n'               +
   '|   | | | | __ _  ___| | _____ _ __/ ___| _ __   __ _  ___ ___     |\n'               +
   '|   | |_| |/ _` |/ __| |/ / _ \\\ \'__\\\___ \\\| \'_ \\\ / _` |/ __/ _ \\\    |\n'   +
@@ -18,7 +19,7 @@ const server = net.createServer((c) => {
 
   // events
   c.on('data', (data) => {
-    console.log(`User: ${data.toString()}`);
+    process.stdout.write(`User: ${data.toString()}`);
     for (let i = 0; i < connections.length; ++i) {
       if (connections[i] !== c) {
         connections[i].write(`User: ${data.toString()}`);
