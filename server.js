@@ -2,18 +2,17 @@
 const net = require('net');
 const readline = require('readline');
 
-const users = [];
 const connections = [];
 
 const colors = {
-  HEADER : '\033[95m',
-  OKBLUE : '\033[94m',
-  OKGREEN : '\033[92m',
-  WARNING : '\033[93m',
-  FAIL : '\033[91m',
-  ENDC : '\033[0m',
-  BOLD : '\033[1m',
-  UNDERLINE : '\033[4m'
+  HEADER    :   '\033[95m',
+  OKBLUE    :   '\033[94m',
+  OKGREEN   :   '\033[92m',
+  WARNING   :   '\033[93m',
+  FAIL      :   '\033[91m',
+  ENDC      :   '\033[0m',
+  BOLD      :   '\033[1m',
+  UNDERLINE :   '\033[4m'
 };
 
 const greeting =
@@ -37,16 +36,18 @@ const server = net.createServer((c) => {
 
   function greetUser() {
     let tempName = generateName();
+    const connectionMsg = `${colors.OKGREEN}${tempName} has connected.${colors.ENDC}\n`;
     c.write(greeting);
     c.write(`${colors.WARNING}Your current name is: ${tempName}${colors.ENDC}\n`);
     c.write('Use "/name <name>" to rename yourself.\n');
     c.write('Or type /help to get a list of all commands!\n\n');
     connections[getUserIndex()].username = tempName;
 
-    process.stdout.write(`${tempName} has connected.\n`);
+
+    process.stdout.write(connectionMsg);
     for (let i = 0; i < connections.length; ++i) {
       if (connections[i] !== c) {
-        connections[i].write(`${tempName} has connected.\n`);
+        connections[i].write(connectionMsg);
       }
     }
   }
@@ -56,10 +57,11 @@ const server = net.createServer((c) => {
   }
 
   function disconnectUser() {
-    process.stdout.write(`${connections[getUserIndex()].username} has disconnected.\n`);
+    const disconnectionMsg = `${colors.FAIL}${connections[getUserIndex()].username} has disconnected.${colors.ENDC}\n`;
+    process.stdout.write(disconnectionMsg);
     for (let i = 0; i < connections.length; ++i) {
       if (connections[i] !== c) {
-        connections[i].write(`${connections[getUserIndex()].username} has disconnected.\n`);
+        connections[i].write(disconnectionMsg);
       }
     }
     connections.splice(getUserIndex(), 1);
@@ -84,12 +86,56 @@ const server = net.createServer((c) => {
     }
   }
 
+  function processCommand(chunk) {
+    let commandArgs = chunk.toString().split(' ');
+    console.log(commandArgs[0])
+    switch (commandArgs[0]) {
+      case '/name':
+        if (!commandArgs[1]) {
+          c.write(`${colors.WARNING}Usage: /name <name>${colors.ENDC}\n`);
+          break;
+        }
+        if ( !(2 <= commandArgs[1].length <= 32) ) {
+          c.write(`${colors.FAIL}Names must be between 2 and 32 characters in length.${colors.ENDC}\n`);
+          break;
+        }
+        var unique = true;
+          for (let i = 0; i < connections.length; ++i) {
+            if (connections[i].username === commandArgs[1]) {
+              unique = false;
+              break;
+            }
+          }
+        if (unique) {
+          let nameChangeMsg = `${colors.OKBLUE}${connections[getUserIndex()].username}
+                                has changed name to ${commandArgs[1]}${colors.ENDC}`;
+          process.stdout.write(nameChangeMsg);
+          for (let i = 0; i < connections.length; ++i) {
+            if (connections[i] !== c) {
+              connections[i].write(nameChangeMsg);
+            }
+          }
+          c.write(`${colors.OKBLUE}Name successfully changed to ${commandArgs[1]}${colors.ENDC}\n`);
+          connections[getUserIndex()].username = commandArgs[1];
+        } else {
+          c.write(`${colors.FAIL}Name is already taken.${colors.ENDC}\n`);
+        }
+        break;
+      default:
+        c.write(`${colors.FAIL}${commandArgs[0]} is not a valid command.${colors.ENDC}\n`);
+    }
+  }
+
   addConnection();
   greetUser();
 
   // events
   c.on('data', (data) => {
-    printData(data);
+    if (data.indexOf('/') === 0) {
+      processCommand(data);
+    } else {
+      printData(data);
+    }
   });
 
   process.stdin.on('readable', () => {
