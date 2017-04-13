@@ -14,7 +14,7 @@ function clearLine() {
 }
 
 function printHelp() {
-  process.stdout.write('\033[1m\\ --------------- HELP --------------- \\\033[0m\n');
+  process.stdout.write(`${colors.BOLD}\\ --------------- HELP --------------- \\${colors.ENDC}\n`);
   for (let i in commands) {
     process.stdout.write(commands[i]);
   }
@@ -30,7 +30,7 @@ function printConnect() {
 }
 
 function printDisconnect() {
-  process.stdout.write(`Disconnected from server.`);
+  process.stdout.write(`Disconnected from server.\n`);
 }
 
 function parseInput() {
@@ -47,16 +47,17 @@ function parseInput() {
           clearLine();
           printHelp();
           break;
+        case 'exit\n':
+          client.end();
+          break;
         default:
         // possibly a server-side command
-          console.log(chunk.slice(1))
           client.write(chunk);
       }
     // if not a command, send our data to server
     } else {
       client.write(chunk);
-      readline.moveCursor(process.stdout, 0, -1);
-      readline.clearScreenDown(process.stdout);
+      clearLine();
     }
   }
 }
@@ -65,6 +66,17 @@ const commands = ['/clear - clears the terminal window.\n',
                   '/help - prints a list of commands\n',
                   '/exit - disconnect from server\n',
                   '/name <name> - change your current name to <name>\n'];
+
+const colors = {
+  HEADER : '\033[95m',
+  OKBLUE : '\033[94m',
+  OKGREEN : '\033[92m',
+  WARNING : '\033[93m',
+  FAIL : '\033[91m',
+  ENDC : '\033[0m',
+  BOLD : '\033[1m',
+  UNDERLINE : '\033[4m'
+};
 
 const client = net.connect({port: 3113, host : '10.0.1.19'}, () => {
   // initial code
